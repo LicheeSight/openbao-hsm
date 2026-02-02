@@ -15,7 +15,9 @@ RUN microdnf install -y \
     autoconf \
     automake \
     libtool \
-    git
+    git \
+    sqlite \
+    sqlite-devel
 
 # Build SoftHSM2 from source
 WORKDIR /tmp
