@@ -10,7 +10,7 @@ This image extends the official `openbao/openbao-hsm-ubi` image with SoftHSM2 li
 
 - ✅ Based on official OpenBao HSM UBI image
 - ✅ Pre-installed SoftHSM2 library
-- ✅ Includes `pkcs11-tool` for key management
+- ✅ Includes SoftHSM2 utilities (`softhsm2-util`, `softhsm2-dump`)
 - ✅ Ready for PKCS#11 seal configuration
 - ✅ Supports auto-unseal with HSM
 

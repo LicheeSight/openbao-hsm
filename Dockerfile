@@ -46,7 +46,6 @@ RUN microdnf install -y \
 
 # Copy SoftHSM2 from builder
 COPY --from=builder /usr/local/bin/softhsm2-* /usr/local/bin/
-COPY --from=builder /usr/local/bin/pkcs11-tool /usr/local/bin/
 COPY --from=builder /usr/local/lib/softhsm/ /usr/local/lib/softhsm/
 COPY --from=builder /usr/local/share/man/man1/ /usr/local/share/man/man1/
 COPY --from=builder /usr/local/etc/softhsm2.conf /usr/local/etc/softhsm2.conf
