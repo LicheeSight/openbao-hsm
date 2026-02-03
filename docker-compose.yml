@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   openbao:
-    image: ghcr.io/itshare4u/openbao-hsm:latest
+    image: ghcr.io/LicheeSight/openbao-hsm:latest
     container_name: openbao-hsm
     hostname: openbao
     ports:

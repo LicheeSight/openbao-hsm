@@ -34,16 +34,15 @@ RUN autoreconf -fi && \
     make -j$(nproc) && \
     make install
 
-# Build external secrets engine plugins (aws/gcp/azure)
+# Build OpenBao external secrets engine plugins (aws/gcp/azure)
 # Build on $BUILDPLATFORM and cross-compile for $TARGETPLATFORM (no QEMU needed).
 FROM --platform=$BUILDPLATFORM golang:1.24 AS plugin-builder
 
 ARG TARGETOS
 ARG TARGETARCH
 
-ARG VAULT_PLUGIN_AWS_VERSION=latest
-ARG VAULT_PLUGIN_GCP_VERSION=latest
-ARG VAULT_PLUGIN_AZURE_VERSION=latest
+# Can be a tag, branch, commit SHA, or "latest".
+ARG OPENBAO_PLUGINS_VERSION=latest
 
 ENV CGO_ENABLED=0
 ENV GOPROXY=https://proxy.golang.org,direct
@@ -52,18 +51,16 @@ RUN mkdir -p /out
 
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
+    set -eux; \
     GOBIN=/out GOOS=$TARGETOS GOARCH=$TARGETARCH \
-    go install github.com/hashicorp/vault-plugin-secrets-aws/cmd/vault-plugin-secrets-aws@${VAULT_PLUGIN_AWS_VERSION}
-
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
+      go install github.com/openbao/openbao-plugins/secrets/aws@${OPENBAO_PLUGINS_VERSION}; \
+    mv /out/aws /out/openbao-plugin-secrets-aws; \
     GOBIN=/out GOOS=$TARGETOS GOARCH=$TARGETARCH \
-    go install github.com/hashicorp/vault-plugin-secrets-gcp/cmd/vault-plugin-secrets-gcp@${VAULT_PLUGIN_GCP_VERSION}
-
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
+      go install github.com/openbao/openbao-plugins/secrets/gcp@${OPENBAO_PLUGINS_VERSION}; \
+    mv /out/gcp /out/openbao-plugin-secrets-gcp; \
     GOBIN=/out GOOS=$TARGETOS GOARCH=$TARGETARCH \
-    go install github.com/hashicorp/vault-plugin-secrets-azure/cmd/vault-plugin-secrets-azure@${VAULT_PLUGIN_AZURE_VERSION}
+      go install github.com/openbao/openbao-plugins/secrets/azure@${OPENBAO_PLUGINS_VERSION}; \
+    mv /out/azure /out/openbao-plugin-secrets-azure
 
 # Create production image
 FROM ghcr.io/openbao/openbao-hsm-ubi:latest
@@ -114,9 +111,9 @@ RUN chown -R openbao:openbao /var/lib/softhsm \
     && chmod 755 /usr/local/lib/softhsm/libsofthsm2.so
 
 # Copy external plugins
-COPY --from=plugin-builder /out/vault-plugin-secrets-aws /usr/local/lib/openbao/plugins/
-COPY --from=plugin-builder /out/vault-plugin-secrets-gcp /usr/local/lib/openbao/plugins/
-COPY --from=plugin-builder /out/vault-plugin-secrets-azure /usr/local/lib/openbao/plugins/
+COPY --from=plugin-builder /out/openbao-plugin-secrets-aws /usr/local/lib/openbao/plugins/
+COPY --from=plugin-builder /out/openbao-plugin-secrets-gcp /usr/local/lib/openbao/plugins/
+COPY --from=plugin-builder /out/openbao-plugin-secrets-azure /usr/local/lib/openbao/plugins/
 
 # Add entrypoint wrapper for SoftHSM key bootstrap
 COPY docker-entrypoint.sh /usr/local/bin/openbao-entrypoint.sh
@@ -125,10 +122,10 @@ RUN chmod +x /usr/local/bin/openbao-entrypoint.sh \
 
 # Add metadata labels
 LABEL org.opencontainers.image.title="OpenBao with SoftHSM2" \
-      org.opencontainers.image.vendor="itshare4u" \
+      org.opencontainers.image.vendor="LicheeSight" \
       org.opencontainers.image.description="OpenBao HSM-enabled with SoftHSM2 for testing" \
-      org.opencontainers.image.url="https://github.com/itshare4u/openbao-hsm" \
-      org.opencontainers.image.source="https://github.com/itshare4u/openbao-hsm" \
+      org.opencontainers.image.url="https://github.com/LicheeSight/openbao-hsm" \
+      org.opencontainers.image.source="https://github.com/LicheeSight/openbao-hsm" \
       org.opencontainers.image.licenses="MPL-2.0"
 
 # Switch back to openbao user

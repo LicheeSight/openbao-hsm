@@ -21,12 +21,12 @@ This image extends the official `openbao/openbao-hsm-ubi` image with SoftHSM2 li
 
 ```bash
 # Pull the image
-docker pull ghcr.io/itshare4u/openbao-hsm:latest
+docker pull ghcr.io/LicheeSight/openbao-hsm:latest
 
 # Run with default settings
 docker run -d --name openbao-hsm \
   -p 8200:8200 \
-  ghcr.io/itshare4u/openbao-hsm:latest
+  ghcr.io/LicheeSight/openbao-hsm:latest
 ```
 
 ### Using Docker Compose
@@ -36,7 +36,7 @@ version: '3.8'
 
 services:
   openbao:
-    image: ghcr.io/itshare4u/openbao-hsm:latest
+    image: ghcr.io/LicheeSight/openbao-hsm:latest
     container_name: openbao-hsm
     ports:
       - "8200:8200"
@@ -122,14 +122,14 @@ The image bundles external secret engine plugins. Register them once:
 
 ```bash
 # aws
-docker exec openbao-hsm sh -lc 'sha256sum /usr/local/lib/openbao/plugins/vault-plugin-secrets-aws'
-docker exec openbao-hsm sh -lc 'bao plugin register -sha256=<SHA256> secret aws'
-docker exec openbao-hsm sh -lc 'bao secrets enable -path=aws aws'
+docker exec openbao-hsm sh -lc 'sha256sum /usr/local/lib/openbao/plugins/openbao-plugin-secrets-aws'
+docker exec openbao-hsm sh -lc 'bao plugin register -sha256=<SHA256> secret openbao-plugin-secrets-aws'
+docker exec openbao-hsm sh -lc 'bao secrets enable -path=aws openbao-plugin-secrets-aws'
 ```
 
 Repeat for:
-- `vault-plugin-secrets-gcp` → name `gcp`
-- `vault-plugin-secrets-azure` → name `azure`
+- `openbao-plugin-secrets-gcp` → name `openbao-plugin-secrets-gcp`
+- `openbao-plugin-secrets-azure` → name `openbao-plugin-secrets-azure`
 
 If you set `BAO_ROOT_TOKEN` and keep `BAO_PLUGIN_AUTO_REGISTER=true`, the entrypoint will auto-register and enable these engines after OpenBao is healthy.
 
@@ -158,7 +158,7 @@ If `BAO_HSM_GENERATE_KEY=true`, the entrypoint will initialize the token (if mis
 
 ```bash
 # Clone repository
-git clone https://github.com/itshare4u/openbao-hsm.git
+git clone https://github.com/LicheeSight/openbao-hsm.git
 cd openbao-hsm
 
 # Build image

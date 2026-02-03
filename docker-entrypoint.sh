@@ -83,21 +83,22 @@ register_plugins() {
   fi
 
   for name in aws gcp azure; do
-    bin="/usr/local/lib/openbao/plugins/vault-plugin-secrets-${name}"
+    plugin="openbao-plugin-secrets-${name}"
+    bin="/usr/local/lib/openbao/plugins/${plugin}"
     if [ ! -x "${bin}" ]; then
       log "Plugin binary missing: ${bin}"
       continue
     fi
 
-    if ! bao plugin info secret "${name}" >/dev/null 2>&1; then
+    if ! bao plugin info secret "${plugin}" >/dev/null 2>&1; then
       sha="$(sha256sum "${bin}" | awk '{print $1}')"
-      log "Registering plugin: ${name}"
-      bao plugin register -sha256="${sha}" secret "${name}" >/dev/null
+      log "Registering plugin: ${plugin}"
+      bao plugin register -sha256="${sha}" secret "${plugin}" >/dev/null
     fi
 
     if ! bao secrets list -format=json 2>/dev/null | grep -q "\"${name}/\""; then
-      log "Enabling secrets engine: ${name}"
-      bao secrets enable -path="${name}" "${name}" >/dev/null
+      log "Enabling secrets engine: ${name} (plugin: ${plugin})"
+      bao secrets enable -path="${name}" "${plugin}" >/dev/null
     fi
   done
 }
