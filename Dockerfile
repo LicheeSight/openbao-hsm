@@ -52,12 +52,41 @@ RUN mkdir -p /out
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     set -eux; \
-    GOBIN=/out GOOS=$TARGETOS GOARCH=$TARGETARCH \
-      go install github.com/openbao/openbao-plugins/plugins/secrets/aws/cmd/openbao-plugin-secrets-aws@${OPENBAO_PLUGINS_VERSION}; \
-    GOBIN=/out GOOS=$TARGETOS GOARCH=$TARGETARCH \
-      go install github.com/openbao/openbao-plugins/plugins/secrets/gcp/cmd/openbao-plugin-secrets-gcp@${OPENBAO_PLUGINS_VERSION}; \
-    GOBIN=/out GOOS=$TARGETOS GOARCH=$TARGETARCH \
-      go install github.com/openbao/openbao-plugins/plugins/secrets/azure/cmd/openbao-plugin-secrets-azure@${OPENBAO_PLUGINS_VERSION}
+    build_plugin() { \
+      name="$1"; shift; \
+      for path in "$@"; do \
+        if GOBIN=/out GOOS=$TARGETOS GOARCH=$TARGETARCH go install "${path}@${OPENBAO_PLUGINS_VERSION}"; then \
+          echo "built ${name} from ${path}"; return 0; \
+        fi; \
+        echo "WARN: failed ${path}, trying next"; \
+      done; \
+      echo "FATAL: could not build ${name}" >&2; exit 1; \
+    }; \
+    ensure_name() { \
+      want="$2"; \
+      if [ ! -x "/out/${want}" ] && [ -x "/out/$1" ]; then mv "/out/$1" "/out/${want}"; fi; \
+    }; \
+    build_plugin openbao-plugin-secrets-aws \
+      github.com/openbao/openbao-plugins/cmd/openbao-plugin-secrets-aws \
+      github.com/openbao/openbao-plugins/plugins/secrets/aws/cmd/openbao-plugin-secrets-aws \
+      github.com/openbao/openbao-plugins/secrets/aws/cmd/openbao-plugin-secrets-aws \
+      github.com/openbao/openbao-plugins/plugins/secrets/aws \
+      github.com/openbao/openbao-plugins/secrets/aws; \
+    ensure_name aws openbao-plugin-secrets-aws; \
+    build_plugin openbao-plugin-secrets-gcp \
+      github.com/openbao/openbao-plugins/cmd/openbao-plugin-secrets-gcp \
+      github.com/openbao/openbao-plugins/plugins/secrets/gcp/cmd/openbao-plugin-secrets-gcp \
+      github.com/openbao/openbao-plugins/secrets/gcp/cmd/openbao-plugin-secrets-gcp \
+      github.com/openbao/openbao-plugins/plugins/secrets/gcp \
+      github.com/openbao/openbao-plugins/secrets/gcp; \
+    ensure_name gcp openbao-plugin-secrets-gcp; \
+    build_plugin openbao-plugin-secrets-azure \
+      github.com/openbao/openbao-plugins/cmd/openbao-plugin-secrets-azure \
+      github.com/openbao/openbao-plugins/plugins/secrets/azure/cmd/openbao-plugin-secrets-azure \
+      github.com/openbao/openbao-plugins/secrets/azure/cmd/openbao-plugin-secrets-azure \
+      github.com/openbao/openbao-plugins/plugins/secrets/azure \
+      github.com/openbao/openbao-plugins/secrets/azure; \
+    ensure_name azure openbao-plugin-secrets-azure
 
 # Create production image
 FROM ghcr.io/openbao/openbao-hsm-ubi:latest
